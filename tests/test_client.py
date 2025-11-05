@@ -2,7 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch, mock_open
-from humemai import Client
+from humemai import Client, APIError, FileUploadError
 
 
 class TestClient:
@@ -180,5 +180,29 @@ class TestClient:
         
         with pytest.raises(FileNotFoundError):
             client.upload_data(file_path="/nonexistent/file.pdf")
+        
+        client.close()
+    
+    @patch('humemai.client.requests.Session.request')
+    def test_api_error_raised(self, mock_request):
+        """Test that APIError is raised on request failure."""
+        import requests
+        mock_request.side_effect = requests.exceptions.RequestException("Connection error")
+        
+        client = Client(api_url="https://api.example.com", api_key="test-key")
+        
+        with pytest.raises(APIError):
+            client.insert_memory(content="Test")
+        
+        client.close()
+    
+    @patch('humemai.client.requests.Session.request')
+    @patch('builtins.open', side_effect=PermissionError("Permission denied"))
+    def test_upload_permission_error(self, mock_open, mock_request):
+        """Test upload_data with permission error."""
+        client = Client(api_url="https://api.example.com", api_key="test-key")
+        
+        with pytest.raises(PermissionError):
+            client.upload_data(file_path="/restricted/file.pdf")
         
         client.close()

@@ -267,24 +267,34 @@ for content in memories:
 
 ## Error Handling
 
+The SDK provides custom exception classes for better error handling:
+
+- `HumemAIError`: Base exception for all SDK errors
+- `APIError`: Raised for API-related errors (network issues, server errors, etc.)
+- `FileUploadError`: Raised for file upload errors
+
 ```python
-from humemai import Client
+from humemai import Client, APIError, FileUploadError
 
 client = Client(api_url="https://api.humemai.com", api_key="your-api-key")
 
+# Handle API errors
 try:
     result = client.insert_memory(
         content="Important memory",
         memory_type="episodic"
     )
-except Exception as e:
-    print(f"Error inserting memory: {e}")
+except APIError as e:
+    print(f"API error: {e}")
 
+# Handle file upload errors
 try:
     client.upload_data(file_path="/path/to/file.pdf")
 except FileNotFoundError:
     print("File not found")
-except Exception as e:
+except PermissionError:
+    print("Permission denied")
+except FileUploadError as e:
     print(f"Upload error: {e}")
 ```
 

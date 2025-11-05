@@ -10,6 +10,21 @@ except ImportError:
     requests = None
 
 
+class HumemAIError(Exception):
+    """Base exception for HumemAI SDK errors."""
+    pass
+
+
+class APIError(HumemAIError):
+    """Exception raised for API-related errors."""
+    pass
+
+
+class FileUploadError(HumemAIError):
+    """Exception raised for file upload errors."""
+    pass
+
+
 class Client:
     """Client for interacting with HumemAI memory system.
     
@@ -84,7 +99,7 @@ class Client:
             Response data as a dictionary
         
         Raises:
-            requests.exceptions.RequestException: If the request fails
+            APIError: If the request fails
         """
         url = urljoin(self.api_url + '/', endpoint.lstrip('/'))
         
@@ -120,7 +135,7 @@ class Client:
                 return {'status': 'success', 'data': response.text}
                 
         except requests.exceptions.RequestException as e:
-            raise Exception(f"API request failed: {str(e)}") from e
+            raise APIError(f"API request failed: {str(e)}") from e
     
     def insert_memory(
         self,
@@ -223,6 +238,11 @@ class Client:
             ...     data_type="document",
             ...     metadata={"source": "research_papers"}
             ... )
+        
+        Raises:
+            FileNotFoundError: If the file does not exist
+            PermissionError: If the file cannot be read due to permissions
+            FileUploadError: If the upload fails
         """
         try:
             with open(file_path, 'rb') as f:
@@ -235,8 +255,12 @@ class Client:
                 return self._make_request('POST', '/upload', data=data, files=files)
         except FileNotFoundError:
             raise FileNotFoundError(f"File not found: {file_path}")
+        except PermissionError:
+            raise PermissionError(f"Permission denied reading file: {file_path}")
+        except APIError:
+            raise
         except Exception as e:
-            raise Exception(f"Failed to upload file: {str(e)}") from e
+            raise FileUploadError(f"Failed to upload file: {str(e)}") from e
     
     def get_memory(self, memory_id: str) -> Dict[str, Any]:
         """Retrieve a specific memory by ID.
