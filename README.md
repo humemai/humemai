@@ -1,2 +1,2 @@
 # humemai
-HumemAI — SDK for Human-Like Memory Systems
+HumemAI — SDK for Human-Like Memory
